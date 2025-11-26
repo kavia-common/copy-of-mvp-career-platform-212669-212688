@@ -53,17 +53,30 @@ REACT_APP_API_BASE_URL=https://vscode-internal-12567-beta.beta01.cloud.kavia.ai:
 
 Restart the dev server after changing `.env`.
 
-## Login flow and troubleshooting
+## Register & Login flow (updated UX)
 
-- Route: `/login` is public (not behind authentication).
-- The login form submits to `POST /api/v1/auth/login`.
-- On success, the token is stored in `localStorage` (key: `token`) and the app navigates to `/roles`.
+- Public routes: `/login`, `/login/details`, `/register`.
+- Two-step login:
+  1. `/login` collects only name and password. No API call is made in this step.
+     - On continue, values are saved in sessionStorage and the app navigates to `/login/details`.
+  2. `/login/details` confirms the name and collects the email address.
+     - On submit, the app calls `POST /api/v1/auth/login` with `{ email, password }`.
+     - On success, the token is stored in `localStorage` (key: `token`) and the app navigates to `/roles`.
+- Registration:
+  - `/register` includes name, email, and password fields in the UI. For MVP backend compatibility, only `name` and `email` are sent to `POST /api/v1/auth/register`.
+  - On success, the app navigates to `/login`.
+
+### API Client behavior
+
 - The login request does not attach the `Authorization` header.
-- On error, a clear message is shown and the button is disabled while submitting.
+- The token is stored on successful login and appended to subsequent authenticated requests.
+- On unauthorized responses, the client clears the token and redirects to `/login`.
 
-If the button does not appear to work:
+### Troubleshooting
+
+If any auth action does not appear to work:
 - Verify the API base URL is correct by setting `.env` as above.
-- Ensure the backend is reachable and returns 200 + a JSON containing `token` (or `access_token`).
+- Ensure the backend is reachable and returns `200` + a JSON containing `token` (or `access_token`) for login.
 - Check the browser console/network tab to confirm the request URL looks like: `https://<host>:3001/api/v1/auth/login` and not a 404 on the frontend origin.
 - If using a different backend path or response shape, update the environment variables accordingly.
 

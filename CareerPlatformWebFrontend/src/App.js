@@ -11,6 +11,8 @@ import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import LoginPage from "./pages/Login";
+import LoginDetailsPage from "./pages/LoginDetails";
+import RegisterPage from "./pages/Register";
 import RoleSelectionPage from "./pages/RoleSelection";
 import AssessmentPage from "./pages/Assessment";
 import GapAnalysisPage from "./pages/GapAnalysis";
@@ -48,6 +50,8 @@ function App() {
         <Routes>
           <Route path="/" element={<RootRedirect />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/login/details" element={<LoginDetailsPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route
             path="/roles"
             element={

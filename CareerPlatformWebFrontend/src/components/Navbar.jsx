@@ -4,7 +4,7 @@ import { getToken, logout } from "../services/api";
 
 // PUBLIC_INTERFACE
 export default function Navbar({ theme, onToggleTheme }) {
-  /** Navbar with brand, simple navigation, theme toggle, and auth-aware login/logout. */
+  /** Navbar with brand, simple navigation, theme toggle, and auth-aware login/logout/register. */
   const navigate = useNavigate();
   const token = getToken();
 
@@ -71,7 +71,10 @@ export default function Navbar({ theme, onToggleTheme }) {
           {theme === "light" ? "🌙 Dark" : "☀️ Light"}
         </button>
         {!token ? (
-          <Link style={linkStyle} to="/login">Login</Link>
+          <>
+            <Link style={linkStyle} to="/login">Login</Link>
+            <Link style={linkStyle} to="/register">Register</Link>
+          </>
         ) : (
           <button style={btnStyle} onClick={handleLogout}>Logout</button>
         )}
