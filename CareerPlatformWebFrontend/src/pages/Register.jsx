@@ -3,8 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { register as registerUser } from "../services/api";
 
 /**
- * Registration form per UX: includes name, email, password fields.
- * For MVP backend compatibility, only name + email are POSTed to /auth/register.
+ * Registration form: includes name, email, password fields.
+ * Posts to /api/v1/auth/register with { name, email, password }.
  */
 
 // PUBLIC_INTERFACE
@@ -44,8 +44,8 @@ export default function Register() {
 
     try {
       setSubmitting(true);
-      // Only send the fields supported by the backend schema for MVP
-      await registerUser({ name: name.trim(), email: email.trim() });
+      // Send full payload as required by backend
+      await registerUser({ name: name.trim(), email: email.trim(), password });
       setOk("Registration successful. You can now sign in.");
       // Optionally prime login step with known values
       sessionStorage.setItem("loginName", name.trim());

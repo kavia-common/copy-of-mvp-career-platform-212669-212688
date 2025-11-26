@@ -1,31 +1,25 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { login } from "../services/api";
 
 /**
- * Step 1 of the login flow: collects only name and password, then navigates to /login/details.
- * No API calls are made here; values are persisted via sessionStorage and route state.
+ * Single-step login form: email + password.
+ * Posts to /api/v1/auth/login with { email, password }.
  */
 
 // PUBLIC_INTERFACE
 export default function Login() {
-  /** Initial login step (name + password). Navigates to /login/details for email entry and final submit. */
+  /** Login page that signs in with email and password; stores token on success and navigates to /roles. */
   const navigate = useNavigate();
-  const [name, setName] = useState("");
+
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    // Restore partially entered data if user navigates back
-    const savedName = sessionStorage.getItem("loginName") || "";
-    const savedPass = sessionStorage.getItem("loginPassword") || "";
-    if (savedName) setName(savedName);
-    if (savedPass) setPassword(savedPass);
-  }, []);
-
   function validate() {
-    if (!name.trim()) {
-      setError("Please enter your name.");
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address.");
       return false;
     }
     if (!password) {
@@ -35,17 +29,17 @@ export default function Login() {
     return true;
   }
 
-  async function handleContinue(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     if (!validate()) return;
 
     try {
       setSubmitting(true);
-      // Persist for next step and refresh scenarios
-      sessionStorage.setItem("loginName", name.trim());
-      sessionStorage.setItem("loginPassword", password);
-      navigate("/login/details", { state: { name: name.trim(), password } });
+      await login(email.trim(), password);
+      navigate("/roles");
+    } catch (e) {
+      setError(e?.message || "Login failed");
     } finally {
       setSubmitting(false);
     }
@@ -84,23 +78,25 @@ export default function Login() {
 
   return (
     <div style={{ padding: 16 }}>
-      <h2>Welcome back</h2>
-      <form onSubmit={handleContinue} style={formWrap} aria-label="Login step 1 form">
+      <h2>Sign in</h2>
+      <form onSubmit={handleSubmit} style={formWrap} aria-label="Login form">
         {error && (
           <div role="alert" style={{ color: "tomato", marginBottom: 12 }}>
             {error}
           </div>
         )}
-        <label htmlFor="name">Name</label>
+
+        <label htmlFor="email">Email</label>
         <input
           style={inputStyle}
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Your full name"
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
           required
         />
+
         <label htmlFor="password">Password</label>
         <input
           style={inputStyle}
@@ -111,8 +107,9 @@ export default function Login() {
           placeholder="••••••••"
           required
         />
+
         <button style={btnStyle} type="submit" disabled={submitting}>
-          {submitting ? "Continuing..." : "Continue"}
+          {submitting ? "Signing in..." : "Login"}
         </button>
 
         <div style={helperStyle}>

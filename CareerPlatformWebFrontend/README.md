@@ -55,15 +55,12 @@ Restart the dev server after changing `.env`.
 
 ## Register & Login flow (updated UX)
 
-- Public routes: `/login`, `/login/details`, `/register`.
-- Two-step login:
-  1. `/login` collects only name and password. No API call is made in this step.
-     - On continue, values are saved in sessionStorage and the app navigates to `/login/details`.
-  2. `/login/details` confirms the name and collects the email address.
-     - On submit, the app calls `POST /api/v1/auth/login` with `{ email, password }`.
-     - On success, the token is stored in `localStorage` (key: `token`) and the app navigates to `/roles`.
+- Public routes: `/login`, `/register`.
+- Single-step login:
+  - `/login` collects email and password and posts to `POST /api/v1/auth/login` with `{ email, password }`.
+  - On success, the token is stored in `localStorage` (key: `token`) and the app navigates to `/roles`.
 - Registration:
-  - `/register` includes name, email, and password fields in the UI. For MVP backend compatibility, only `name` and `email` are sent to `POST /api/v1/auth/register`.
+  - `/register` includes name, email, and password fields and posts to `POST /api/v1/auth/register` with `{ name, email, password }`.
   - On success, the app navigates to `/login`.
 
 ### API Client behavior
