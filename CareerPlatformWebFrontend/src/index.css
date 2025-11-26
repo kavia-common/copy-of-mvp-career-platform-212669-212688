@@ -11,3 +11,28 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Lightweight polish */
+a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--text-secondary);
+}
+
+button {
+  transition: transform 0.08s ease, opacity 0.2s ease;
+}
+button:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+h1, h2, h3 {
+  margin: 0.2rem 0 0.6rem;
+}
