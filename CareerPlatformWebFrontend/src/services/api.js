@@ -1,6 +1,21 @@
-const RAW_BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
+const RAW_API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "";
 const RAW_API_BASE = process.env.REACT_APP_API_BASE || "/api/v1";
 const FRONTEND_BASE = process.env.REACT_APP_FRONTEND_URL || (typeof window !== "undefined" ? window.location.origin : "");
+
+// Derive a sensible default backend URL for local dev if not provided:
+// If frontend runs on :3000, assume backend is on the same host :3001
+const DEFAULT_BACKEND_URL = (() => {
+  if (typeof window === "undefined") return "";
+  try {
+    const u = new URL(window.location.href);
+    if (u.port === "3000") {
+      return `${u.protocol}//${u.hostname}:3001`;
+    }
+    return "";
+  } catch {
+    return "";
+  }
+})();
 
 /**
  * Join a base URL and a path ensuring a single slash boundary.
@@ -14,11 +29,30 @@ function joinUrl(base, path) {
 }
 
 /**
- * Final API base URL:
- * - If REACT_APP_BACKEND_URL is set, compose it with REACT_APP_API_BASE (default /api/v1)
- * - Otherwise fall back to relative REACT_APP_API_BASE for same-origin proxy setups
+ * Normalize a base URL by removing any trailing slash.
  */
-export const API_BASE_URL = RAW_BACKEND_URL ? joinUrl(RAW_BACKEND_URL, RAW_API_BASE) : RAW_API_BASE;
+function normalizeBase(base) {
+  if (!base) return "";
+  return base.endsWith("/") ? base.slice(0, -1) : base;
+}
+
+/**
+ * Final API base URL precedence:
+ * 1) REACT_APP_API_BASE_URL if provided (e.g., https://api.example.com/api/v1)
+ * 2) join(REACT_APP_BACKEND_URL or default dev URL, REACT_APP_API_BASE)
+ * 3) REACT_APP_API_BASE (relative, e.g., /api/v1)
+ */
+const RAW_BACKEND_URL = process.env.REACT_APP_BACKEND_URL || DEFAULT_BACKEND_URL || "";
+
+export const API_BASE_URL = (() => {
+  if (RAW_API_BASE_URL) {
+    return normalizeBase(RAW_API_BASE_URL);
+  }
+  if (RAW_BACKEND_URL) {
+    return joinUrl(RAW_BACKEND_URL, RAW_API_BASE);
+  }
+  return normalizeBase(RAW_API_BASE);
+})();
 
 /**
  * Best-effort handler for unauthorized responses.
@@ -56,17 +90,21 @@ function _readToken() {
 }
 
 /**
- * Internal request helper using fetch with JSON handling and auth header.
+ * Internal request helper using fetch with JSON handling and optional auth header.
  * Throws an error on non-2xx status with a best-effort message.
  */
 async function _request(path, options = {}) {
-  const token = _readToken();
+  const { auth = true } = options;
+
   const headers = {
     "Content-Type": "application/json",
     ...(options.headers || {}),
   };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
+  if (auth) {
+    const token = _readToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
   }
 
   const url = `${API_BASE_URL}${path}`;
@@ -119,15 +157,17 @@ export function getApiBaseUrl() {
   return API_BASE_URL;
 }
 
-// PUBLIC_INTERFACE
+/* PUBLIC_INTERFACE */
 export async function login(email, password) {
   /** Authenticate and return the token; also stores it for subsequent calls. */
   const res = await _request("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
+    auth: false, // ensure no Authorization header on login
   });
-  if (res?.token) {
-    setToken(res.token);
+  const tok = res?.token || res?.access_token || res?.accessToken;
+  if (tok) {
+    setToken(tok);
   }
   return res;
 }
