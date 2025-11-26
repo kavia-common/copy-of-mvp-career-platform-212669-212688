@@ -1,47 +1,96 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useMemo, useState } from "react";
+import "./App.css";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
+import Navbar from "./components/Navbar";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+import LoginPage from "./pages/Login";
+import RoleSelectionPage from "./pages/RoleSelection";
+import AssessmentPage from "./pages/Assessment";
+import GapAnalysisPage from "./pages/GapAnalysis";
+import DevelopmentPlanPage from "./pages/DevelopmentPlan";
+import AuditLogsPage from "./pages/AuditLogs";
 
 // PUBLIC_INTERFACE
 function App() {
-  const [theme, setTheme] = useState('light');
-
-  // Effect to apply theme to document element
+  /** Main application entry with router, navbar, and theme handling. */
+  const [theme, setTheme] = useState("light");
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
   // PUBLIC_INTERFACE
   const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+    /** Toggle the light/dark theme for the app. */
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
+
+  const AppContainer = useMemo(
+    () => ({ paddingTop: 0, minHeight: "100vh", background: "var(--bg-primary)", color: "var(--text-primary)" }),
+    []
+  );
+
+  const RootRedirect = () => {
+    const hasToken = !!localStorage.getItem("token");
+    return <Navigate to={hasToken ? "/roles" : "/login"} replace />;
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="App" style={AppContainer}>
+      <Router>
+        <Navbar theme={theme} onToggleTheme={toggleTheme} />
+        <Routes>
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/roles"
+            element={
+              <ProtectedRoute>
+                <RoleSelectionPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assessment"
+            element={
+              <ProtectedRoute>
+                <AssessmentPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gap-analysis"
+            element={
+              <ProtectedRoute>
+                <GapAnalysisPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/plan"
+            element={
+              <ProtectedRoute>
+                <DevelopmentPlanPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-logs"
+            element={
+              <ProtectedRoute>
+                <AuditLogsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
     </div>
   );
 }
