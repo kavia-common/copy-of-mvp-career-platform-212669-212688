@@ -45,12 +45,42 @@ function normalizeBase(base) {
 const RAW_BACKEND_URL = process.env.REACT_APP_BACKEND_URL || DEFAULT_BACKEND_URL || "";
 
 export const API_BASE_URL = (() => {
-  if (RAW_API_BASE_URL) {
-    return normalizeBase(RAW_API_BASE_URL);
+  // If a full base URL is supplied, ensure it includes a versioned /api path.
+  const baseUrlEnv = normalizeBase(RAW_API_BASE_URL);
+  if (baseUrlEnv) {
+    try {
+      // new URL requires an absolute base; when running in browser, use window origin
+      const baseForParse =
+        typeof window !== "undefined" ? window.location.origin : "http://localhost";
+      const parsed = new URL(baseUrlEnv, baseForParse);
+      const path = (parsed.pathname || "").replace(/\/+$/, ""); // trim trailing slash
+
+      const hasVersion = /\/api\/v\d+$/i.test(path);
+      const endsWithApi = /\/api\/?$/i.test(path);
+
+      if (hasVersion) {
+        // Already versioned like /api/v1 – use as-is.
+        return baseUrlEnv;
+      }
+      if (endsWithApi) {
+        // Ends with /api or /api/ – append just v1
+        return `${baseUrlEnv}${baseUrlEnv.endsWith("/") ? "v1" : "/v1"}`;
+      }
+      // No /api segment – append configured RAW_API_BASE (defaults to /api/v1)
+      return joinUrl(baseUrlEnv, RAW_API_BASE);
+    } catch {
+      // If parsing fails (e.g., relative string), fallback to joining a versioned base
+      return joinUrl(baseUrlEnv, RAW_API_BASE);
+    }
   }
+
+  // If only backend host/port is provided, append /api/v1
   if (RAW_BACKEND_URL) {
-    return joinUrl(RAW_BACKEND_URL, RAW_API_BASE);
+    const backend = normalizeBase(RAW_BACKEND_URL);
+    return joinUrl(backend, RAW_API_BASE);
   }
+
+  // Default to a relative, versioned base
   return normalizeBase(RAW_API_BASE);
 })();
 
